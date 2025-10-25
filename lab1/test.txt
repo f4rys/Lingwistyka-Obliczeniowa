@@ -1,0 +1,40 @@
+A quick introduction to Python functions and how to define them.
+How to write a loop that iterates over a list of numbers.
+What is the difference between a list and a tuple in Python?
+Understanding variable scope inside and outside of functions.
+How to read a file line by line in Python using with-open syntax.
+Best practices for handling exceptions with try and except blocks.
+Explaining the concept of classes and objects in object-oriented programming.
+How to install packages with pip and manage virtual environments.
+The role of requirements files for reproducible environments.
+Using dictionaries to count word frequencies in a text.
+How to split a string into tokens and join them back together.
+Converting between strings and integers safely with error handling.
+How to write and run simple unit tests using pytest.
+Understanding time complexity of common data structures.
+Basic usage of Git: committing, branching, and merging.
+An example of a REST API request using the requests library.
+How to parse JSON data into Python objects and back.
+Writing a list comprehension to transform and filter data.
+Sorting a list of dictionaries by a specific key.
+Difference between shallow and deep copy in Python.
+How to create and activate a virtual environment on macOS.
+Printing formatted strings with f-strings and format specifiers.
+Reading command-line arguments with argparse.
+Basic regular expressions: matching emails and simple patterns.
+How to measure execution time of a code block.
+Saving and loading Python objects with pickle (and caveats).
+The purpose of a main guard: if __name__ == "__main__".
+Working with dates and times using the datetime module.
+Simple example of recursion with Fibonacci numbers.
+Explaining immutable vs mutable types with examples.
+How to handle large text files efficiently in Python.
+Vectorized operations with NumPy vs pure Python loops.
+Using list, set, and dict comprehensions effectively.
+When to choose a deque over a list for queue behavior.
+Understanding Python's garbage collector at a high level.
+Creating a simple CLI tool that echoes input.
+Using environment variables for configuration.
+Logging messages with different severity levels using logging.
+Generating random numbers and setting a random seed.
+Basic security tips for handling user input and passwords.
