@@ -209,3 +209,10 @@ __marimo__/
 # Models
 checkpoints/
 outputs/
+
+# Latex build files
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz

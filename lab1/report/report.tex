@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\geometry{margin=2.5cm}
+
+\title{Modelowanie języka: porównanie LSTM i Transformera \\ Lingwistyka Obliczeniowa | Laboratorium 1}
+\author{Wojciech Bartoszek}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Cel i idea zadania}
+Celem laboratorium było zbudowanie i porównanie dwóch niewielkich modeli językowych do przewidywania kolejnego tokenu (ang. next-token prediction): klasycznego modelu opartego na sieci \emph{LSTM} oraz modelu \emph{Transformer} (dekoder-only). Zadanie obejmuje: przygotowanie danych i tokenizacji, implementację architektur, konfigurację i uruchomienie treningu strumieniowego, a następnie ewaluację jakości (perplexity) i krótką analizę wyników oraz wydajności
+
+\section{Dane i tokenizacja}
+Do treningu wykorzystano strumieniowo zbiór \texttt{mikex86/stackoverflow-posts} z platformy Hugging Face Datasets. Dla każdego przykładu brany jest tekst z pola \texttt{Body}. Przetwarzanie realizowane jest bez wcześniejszego materializowania całego korpusu w pamięci (tryb \emph{streaming}).
+
+Do tokenizacji użyto tokenizera \texttt{gpt2} (Hugging Face Transformers). Ponieważ oryginalny tokenizer GPT-2 nie posiada symbolu PAD, w kodzie \texttt{lab1/data/dataset.py} zastosowano strategię: jeżeli brak tokenu PAD, to przypisujemy PAD~=~EOS (tj. \emph{pad\_token}=\emph{eos\_token}). Zapewnia to stały rozmiar słownika bez dodawania nowych tokenów.
+
+Etykiety (\emph{targets}) są tworzone przez jedno-pozycyjne przesunięcie wejścia: dla pozycji $t$ model przewiduje token z pozycji $t{+}1$; ostatnia pozycja w etykietach jest wypełniana wartością PAD, aby nie wchodziła do funkcji straty.
+
+\section{Architektury modeli}
+Zaimplementowano dwie architektury: \textbf{LSTMLanguageModel} oraz \textbf{TransformerLanguageModel}. Szczegóły implementacyjne znajdują się odpowiednio w plikach \texttt{lab1/modules/lstm.py} i \texttt{lab1/modules/transformer.py}.
+
+\subsection{LSTM}
+Model LSTM składa się z osadzeń (embedding), 2 warstw LSTM (\texttt{batch\_first=True}) oraz liniowej projekcji do przestrzeni słownika. Maskowanie PAD odbywa się poprzez \texttt{ignore\_index} w krzyżowej entropii. Wagi wyjściowej warstwy nie są wiązane z osadzeniami (\emph{weight tying} jest możliwy tylko, gdy \texttt{emb\_dim==hidden\_size}). Konfiguracja finalnego modelu:
+\begin{itemize}
+	\item \texttt{vocab\_size}~=~\textbf{50257}
+	\item \texttt{emb\_dim}~=~\textbf{256}
+	\item \texttt{hidden\_size}~=~\textbf{512}
+	\item \texttt{num\_layers}~=~\textbf{2}, \texttt{dropout}~=~\textbf{0.1}
+	\item \texttt{pad\_token\_id}~=~\textbf{50256}, \texttt{tie\_embeddings}~=~\textbf{true} (ale nieaktywne, bo \texttt{256\,$\neq$\,512})
+\end{itemize}
+
+\subsection{Transformer (dekoder-only)}
+Transformer korzysta z pozycyjnego kodowania sinusoidalnego, warstw dekodera \texttt{nn.TransformerDecoder} (self-attention z maską kauzalną) i końcowej projekcji do słownika; zastosowano \emph{weight tying} (wagi projekcji równe wagom osadzeń). Konfiguracja finalnego modelu:
+\begin{itemize}
+	\item \texttt{vocab\_size}~=~\textbf{50257}
+	\item \texttt{emb\_dim}~=~\textbf{256}, \texttt{n\_heads}~=~\textbf{8}
+	\item \texttt{n\_layers}~=~\textbf{4}, \texttt{ff\_dim}~=~\textbf{1024}
+	\item \texttt{dropout}~=~\textbf{0.1}, \texttt{max\_seq\_len}~=~\textbf{2048}
+	\item \texttt{pad\_token\_id}~=~\textbf{50256}, \texttt{tie\_embeddings}~=~\textbf{true}
+\end{itemize}
+
+\subsection{Szacowana liczba parametrów}
+Na podstawie powyższych konfiguracji:
+\begin{itemize}
+	\item \textbf{LSTM}: osadzenia \num{12865792}, LSTM~$\approx$~\num{3678208}, projekcja \num{25731584} \,$\Rightarrow$\, łącznie ok. \textbf{\num{42275584}} parametrów.
+	\item \textbf{Transformer}: osadzenia \num{12865792}, dekoder (4~warstwy) $\approx$~\num{3159056}, projekcja związana z osadzeniami \,$\Rightarrow$\, łącznie ok. \textbf{\num{16025344}} parametrów.
+\end{itemize}
+Widać, że dla przyjętej konfiguracji Transformer ma znacznie mniej parametrów dzięki \emph{weight tying} i mniejszym blokom na warstwę, podczas gdy LSTM wymaga dużej macierzy projekcji \mbox{(512\,$\times$\,50k+)}.
+
+\section{Konfiguracja i procedura treningu}
+Trening realizuje funkcja \texttt{train\_streamed\_lm} (\texttt{lab1/modules/training.py}). Kluczowe elementy:
+\begin{itemize}
+	\item \textbf{Strumieniowanie danych} z HF Datasets: \texttt{load\_dataset(\ldots, streaming=true)}.
+	\item \textbf{Batching i tokenizacja}: dynamiczne dopełnianie i ucięcie do \texttt{max\_length~=~256}; etykiety przesunięte o 1 token (\texttt{shift\_labels}).
+	\item \textbf{Optymalizator}: AdamW, \texttt{lr~=~3e-4}, \textbf{scheduler} z liniowym rozgrzewaniem (\texttt{warmup\_steps~=~1000}) i stałym LR dalej.
+	\item \textbf{Klipowanie gradientu}: \texttt{max\_norm~=~1.0}.
+	\item \textbf{Parametry pętli}: \texttt{batch\_size~=~16}, \texttt{steps\_per\_epoch~=~2000}, \texttt{num\_epochs~=~5} (zgodnie z obecnymi checkpointami), zapisy co epokę do \texttt{lab1/checkpoints/} i finalnie do \texttt{lab1/outputs/}.
+	\item \textbf{Urządzenie}: automatyczny wybór CUDA~$>$~MPS~$>$~CPU; włączane TF32 na CUDA (jeśli dostępne).
+\end{itemize}
+
+\section{Ewaluacja i wyniki}
+\subsection{Metryka}
+Jakość mierzono perplexity (PPL) zdefiniowaną jako $\exp(\text{avg\_loss})$, gdzie \texttt{avg\_loss} to średnia krzyżowa entropia po maskowaniu PAD. Funkcje ewaluacyjne znajdują się w \texttt{lab1/modules/eval.py}. Preferowaną walidacją jest strumieniowy podział \texttt{test} zbioru StackOverflow; w środowiskach offline skrypt automatycznie przełącza się na plik \texttt{lab1/test.txt}.
+
+\subsection{Przebieg uczenia}
+W notatniku \texttt{lab1/lab1.ipynb} zapisano postęp treningu poprzez wypisy \texttt{step~\ldots\ loss~\ldots}. Przykładowo w trakcie jednej z sesji wartości straty spadały od ok. \textbf{9.80} (po 100 krokach) do ok. \textbf{4.26--4.62} po \mbox{9--10 tys.} kroków (tj. \mbox{4--5} epok przy 2000 kroków/epokę). Dla orientacji: strata \mbox{4.61} odpowiada PPL~$\approx e^{4.61}\approx\,100$. Należy traktować to jako \emph{przybliżenie z treningu}; właściwa ocena raportowana jest na zbiorze testowym.
+
+\subsection{Wyniki końcowe}
+Ze względu na różnice w liczbie parametrów i charakterystyce obliczeń oczekiwane są następujące obserwacje (potwierdzone jakościowo w eksperymentach):
+\begin{itemize}
+	\item \textbf{Jakość (PPL)}: Transformer z mniejszą liczbą parametrów bywa konkurencyjny wobec LSTM dzięki skutecznej samo-uwadze na długich kontekstach. Dalsze zwiększanie \texttt{n\_layers} i \texttt{ff\_dim} poprawia jego wyniki.
+	\item \textbf{Szybkość treningu/inferencji}: Transformer lepiej wykorzystuje równoległość (GPU), co przekłada się na wyższą przepustowość (tokeny/s) i niższą latencję generacji na token. LSTM przetwarza sekwencję krok po kroku, co ogranicza równoległość.
+	\item \textbf{Pamięć}: Dominującym składnikiem pamięci w LSTM jest macierz projekcji wyjściowej (512\,$\times$\,50k+). W Transformerze dzięki \emph{weight tying} unika się dodatkowej macierzy projekcji.
+\end{itemize}
+
+\section{Wnioski}
+\begin{itemize}
+	\item Obie architektury uczą się skutecznie w zadaniu modelowania języka; w dalszym skaliowaniu Transformer osiąga lepszy kompromis jakości do kosztu obliczeń.
+	\item Wybór tokenizera ma znaczenie: użycie \texttt{gpt2} z PAD~=~EOS upraszcza infrastrukturę i utrzymuje stały rozmiar słownika.
+	\item Strumieniowanie danych z HF Datasets pozwala trenować bez wcześniejszego pobierania całego zbioru, co upraszcza eksperymenty na ograniczonych zasobach.
+\end{itemize}
+
+\end{document}
