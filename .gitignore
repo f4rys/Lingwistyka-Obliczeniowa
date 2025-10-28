@@ -216,3 +216,5 @@ outputs/
 *.fls
 *.out
 *.synctex.gz
+
+*.md
