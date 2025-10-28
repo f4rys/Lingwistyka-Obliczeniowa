@@ -4,5 +4,6 @@ This repository implements two small causal language models (LSTM vs Transformer
 
 # Final models
 
-(https://huggingface.co/f4rys/lab1-lstm/tree/main)[LSTM]
-(https://huggingface.co/f4rys/lab1-transformer/tree/main)[Transformer]
+[LSTM](https://huggingface.co/f4rys/lab1-lstm/tree/main)
+
+[Transformer](https://huggingface.co/f4rys/lab1-transformer/tree/main)
