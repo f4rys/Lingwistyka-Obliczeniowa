@@ -1,0 +1,245 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\newcommand{\placeholder}[1]{\texttt{#1}}
+\geometry{margin=2.5cm}
+
+\title{Tokenizacja i jej wpływ na modele językowe \\Lingwistyka Obliczeniowa | Laboratorium 2}
+\author{Wojciech Bartoszek}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Cel i zakres zadania}
+Celem laboratorium było zbadanie wpływu różnych strategii tokenizacji na efektywność i zachowanie prostego modelu językowego. Zaimplementowano i porównano trzy tokenizery: pretrenowany (GPT-2 BPE), własny tokenizer oparty na rozdzielaniu po białych znakach (whitespace) z ograniczonym słownikiem oraz tokenizer oparty na SentencePiece (BPE). Dla każdego tokenizera trenowano identyczną architekturę modelu (Transformer dekoder-only) i porównano je pod kątem metryk jakościowych (perplexity na poziomie słowa i znaku), statystyk OOV oraz metryk efektywności.
+
+\section{Tokenizery}
+Opis implementowanych tokenizerów oraz parametrów użytych w eksperymencie.
+
+\subsection{Pretrenowany tokenizer (GPT-2 BPE)}
+Użyto tokenizeru z biblioteki Hugging Face: \texttt{gpt2} (fast). Jeżeli tokenizer nie zawierał tokenu PAD, ustawiono go na token EOS, aby zapewnić spójność przy dopełnianiu.
+
+\subsection{Whitespace tokenizer (własny)}
+Implementacja dzieli tekst na tokeny według wyrażeń regularnych (\texttt{\textbackslash w+} lub pojedyncze znaki interpunkcyjne). Słownik jest tworzony jako top-$N$ najczęściej występujących tokenów w korpusie treningowym; tokeny rzadkie są mapowane na \texttt{<UNK>}. Specjalne tokeny: \texttt{<PAD>} i \texttt{<UNK>}.
+
+\subsection{SentencePiece (BPE)}
+SentencePiece trenowano na samodzielnie zbudowanym korpusie treningowym (\SI{1.2}{MB}) przy użyciu algorytmu BPE i tej samej wielkości słownika $N$ jak w tokenizerze pretrenowanym.
+
+\section{Model i konfiguracja eksperymentu}
+Model: prosty Transformer dekoder-only zaimplementowany w module \texttt{modules/transformer.py}. Parametry użyte w eksperymencie (przykładowa, powtarzalna konfiguracja testowa):
+\begin{itemize}
+  \item \texttt{vocab\_size} = \textbf{\placeholder{VOCAB\_SIZE}} (ten sam dla wszystkich tokenizerów) 
+  \item \texttt{emb\_dim} = 384
+  \item \texttt{n\_heads} = 6
+  \item \texttt{n\_layers} = 4
+  \item \texttt{ff\_dim} = 1536
+  \item \texttt{max\_seq\_len} = 256
+  \item \texttt{pad\_token\_id} = (zależne od tokenizeru)
+\end{itemize}
+
+Trening prowadzono strumieniowo na zbiorze \texttt{mikex86/stackoverflow-posts} z użyciem funkcji \texttt{train\_streamed\_lm}. Kluczowe ustawienia pętli treningowej (konfiguracja użyta w notatniku):
+\begin{itemize}
+  \item \texttt{batch\_size} = 16
+  \item \texttt{max\_length} = 256
+  \item \texttt{steps\_per\_epoch} = 1000
+  \item \texttt{num\_epochs} = 5
+  \item \texttt{lr} = 3e-4, warmup 200 kroków (skalowane względem akumulacji gradientu)
+  \item \texttt{grad\_clip} = 1.0, \texttt{grad\_accum\_steps} = 2
+\end{itemize}
+
+Urządzenie: automatyczny wybór \texttt{CUDA > MPS > CPU}. Ustawienia treningu i mierzenia czasu uwzględniają synchronizację dla CUDA i MPS.
+
+\section{Procedura oceny i metryki}
+Ocena każdej pary (tokenizer, model) obejmowała:
+\begin{itemize}
+  \item obliczenie średniego token-level NLL (używając \texttt{evaluate\_token\_nll}),
+  \item przeliczenie na perplexity na poziomie słowa i na poziomie znaku przez przeskalowanie NLL stosunkiem tokens/word i tokens/char (\texttt{word\_and\_char\_perplexity}),
+  \item statystyki OOV dla whitespace-tokenizera (liczba i procent OOV słów),
+  \item metryki wydajności: przepustowość tokenów/s, ms/token dla generacji, ms/krok treningowego (moduł \texttt{modules/benchmark.py}),
+  \item statystyki tokenizacji: średnia tokenów na słowo obliczona na próbie \SI{1}{MB} nieużywanego w treningu tekstu oraz procent słów zakodowanych bez rozbicia lub zastąpienia \texttt{<UNK>}.
+\end{itemize}
+
+W raporcie znajdują się miejsca na wypełnienie wyników empirycznych (tabele i wykresy). Poniżej znajdują się przygotowane szablony.
+
+\section{Wyniki (miejsce na wyniki)}
+\subsection{Podsumowanie metryk jakości}
+Poniżej przedstawiono wyniki jakościowe uzyskane po przeprowadzeniu eksperymentów.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Tokenizer & token-NLL & word-PPL & char-PPL & eval-tokens \\
+\midrule
+Pretrained (GPT-2) & 7.0913 & 1861.63 & 4.0257 & 407 \\
+Whitespace (top-$N$) & 6.4189 & 613.31 & 3.2783 & 381 \\
+SentencePiece (BPE) & 6.7868 & 1283.78 & 3.7583 & 404 \\
+\bottomrule
+\end{tabular}
+\caption{Porównanie jakości uzyskanych modeli}
+\end{table}
+
+\subsection{OOV dla whitespace tokenizer}
+Whitespace tokenizer używa słownika o rozmiarze $N$ (takim samym jak wygenerowany z GPT-2). OOV liczono na tej samej próbce testowej co PPL. Wyniki:
+\begin{itemize}
+  \item liczba OOV: 14
+  \item łączna liczba słów: 421
+  \item procent OOV: 3.3254\% 
+\end{itemize}
+
+\subsection{Efektywność i tokenizacja}
+Tabela poniżej zawiera metryki wydajności oraz podstawowe statystyki tokenizacji obliczone na krótkiej próbce wykorzystanej do ewaluacji.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Tokenizer & vocab & tok/s & avg-tokens/word & pct-words-direct & tokens-measured \\
+\midrule
+Pretrained (GPT-2) & 50257 & 207659.51 & 1.0618 & 79.10\% & 894 \\
+Whitespace (top-$N$) & 26428 & 121294.27 & 1.0000 & 96.67\% & 842 \\
+SentencePiece (BPE) & 50257 & 135300.13 & 1.0546 & 95.01\% & 888 \\
+\bottomrule
+\end{tabular}
+\caption{Metryki wydajności i statystyki tokenizacji na krótkiej próbce}
+\end{table}
+
+\paragraph{Metryki na buforze ~1MB}
+Dla stabilniejszej oceny tokenizacji użyto próbki ~1MB (nieużywanej w treningu SP). Wyniki:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Tokenizer & tok/s (1MB) & tokens-measured & avg-tokens/word & direct-words & total-words \\
+\midrule
+Pretrained (GPT-2) & 191742.06 & 894 & 1.0618 & 333 & 421 \\
+Whitespace (top-$N$) & 166216.59 & 842 & 1.0000 & 407 & 421 \\
+SentencePiece (BPE) & 79057.18 & 888 & 1.0546 & 400 & 421 \\
+\bottomrule
+\end{tabular}
+\caption{Metryki tokenizacji i bezpośredniego kodowania na ~1MB buforze testowym}
+\end{table}
+
+\subsection{Przykłady jakościowe}
+Poniżej trzy przykłady (każdy >=30 słów) wraz z tokenizacjami dla trzech tokenizerów.
+
+\subsubsection*{Przykład 1}
+\textbf{Tekst:}
+In Python, list comprehensions provide a concise way to create lists. They are often faster than using loops, and they express intent clearly when mapping and filtering collections in everyday data processing tasks.
+
+\textbf{Pretrained Tokens:}
+\begin{verbatim}
+['In', 'ĠPython', ',', 'Ġlist', 'Ġcomprehens', 'ions', 'Ġprovide', 'Ġa', 'Ġconcise',
+ 'Ġway', 'Ġto', 'Ġcreate', 'Ġlists', '.', 'ĠThey', 'Ġare', 'Ġoften', 'Ġfaster', 
+ 'Ġthan', 'Ġusing', 'Ġloops', ',', 'Ġand', 'Ġthey', 'Ġexpress', 'Ġintent', 
+ 'Ġclearly', 'Ġwhen', 'Ġmapping', 'Ġand', 'Ġfiltering', 'Ġcollections', 'Ġin', 
+ 'Ġeveryday', 'Ġdata', 'Ġprocessing', 'Ġtasks', '.']
+\end{verbatim}
+
+\textbf{Whitespace Tokens:}
+\begin{verbatim}
+['In', 'Python', ',', 'list', 'comprehensions', 'provide', 'a', 'concise', 'way', 
+'to', 'create', 'lists', '.', 'They', 'are', 'often', 'faster', 'than', 'using', 
+'loops', ',', 'and', 'they', 'express', 'intent', 'clearly', 'when', 'mapping', 
+'and', 'filtering', 'collections', 'in', 'everyday', 'data', 'processing', 'tasks',
+ '.']
+\end{verbatim}
+
+\textbf{SentencePiece Tokens:}
+\begin{verbatim}
+['_In', '_Python', ',', '_list', '_comprehensions', '_provide', '_a', '_concise',
+ '_way', '_to', '_create', '_lists', '.', '_They', '_are', '_often', '_faster', 
+ '_than', '_using', '_loops', ',', '_and', '_they', '_express', '_intent', 
+ '_clearly', '_when', '_mapping', '_and', '_filtering', '_collections', '_in', 
+ '_everyday', '_data', '_processing', '_tasks', '.']
+\end{verbatim}
+
+\subsubsection*{Przykład 2}
+\textbf{Tekst:}
+The quick brown fox jumps over the lazy dog, while the curious cat watches from the windowsill, pondering why humans keep typing this sentence to test keyboards and fonts across different systems.
+
+\textbf{Pretrained Tokens:}
+\begin{verbatim}
+['The', 'Ġquick', 'Ġbrown', 'Ġfox', 'Ġjumps', 'Ġover', 'Ġthe', 'Ġlazy', 'Ġdog', 
+',', 'Ġwhile', 'Ġthe', 'Ġcurious', 'Ġcat', 'Ġwatches', 'Ġfrom', 'Ġthe', 
+'Ġwindows', 'ill', ',', 'Ġpond', 'ering', 'Ġwhy', 'Ġhumans', 'Ġkeep', 
+'Ġtyping', 'Ġthis', 'Ġsentence', 'Ġto', 'Ġtest', 'Ġkeyboards', 'Ġand', 
+'Ġfonts', 'Ġacross', 'Ġdifferent', 'Ġsystems', '.']
+\end{verbatim}
+
+\textbf{Whitespace Tokens:}
+\begin{verbatim}
+['The', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog', 
+',', 'while', 'the', 'curious', 'cat', 'watches', 'from', 'the', '<UNK>',
+ ',', '<UNK>', 'why', 'humans', 'keep', 'typing', 'this', 'sentence',
+  'to', 'test', 'keyboards', 'and', 'fonts', 'across', 'different',
+   'systems', '.']
+\end{verbatim}
+
+\textbf{SentencePiece Tokens:}
+\begin{verbatim}
+['_The', '_quick', '_brow', 'n', '_fox', '_jumps', '_over', '_the', '_lazy', '_dog',
+ ',', '_while', '_the', '_curious', '_cat', '_watches', '_from', '_the', '_windows',
+  'ill', ',', '_pon', 'dering', '_why', '_humans', '_keep', '_typing', '_this', 
+  '_sent', 'ence', '_to', '_test', '_keyboards', '_and', '_fonts', '_across', 
+  '_different', '_systems', '.']
+\end{verbatim}
+
+\subsubsection*{Przykład 3}
+\textbf{Tekst:}
+When training language models, tokenization choices can greatly affect performance, memory usage, and generalization; understanding subword algorithms and OOV behavior helps practitioners make informed trade-offs for their applications.
+
+\textbf{Pretrained Tokens:}
+\begin{verbatim}
+['When', 'Ġtraining', 'Ġlanguage', 'Ġmodels', ',', 'Ġtoken', 'ization', 'Ġchoices',
+ 'Ġcan', 'Ġgreatly', 'Ġaffect', 'Ġperformance', ',', 'Ġmemory', 'Ġusage', ',', 
+ 'Ġand', 'Ġgeneral', 'ization', ';', 'Ġunderstanding', 'Ġsub', 'word', 
+ 'Ġalgorithms', 'Ġand', 'ĠO', 'OV', 'Ġbehavior', 'Ġhelps', 'Ġpractitioners', 
+ 'Ġmake', 'Ġinformed', 'Ġtrade', '-', 'offs', 'Ġfor', 'Ġtheir',
+  'Ġapplications', '.']
+\end{verbatim}
+
+\textbf{Whitespace Tokens:}
+\begin{verbatim}
+['When', 'training', 'language', 'models', ',', '<UNK>', 'choices', 'can', 
+'greatly', 'affect', 'performance', ',', 'memory', 'usage', ',', 'and', 
+'<UNK>', ';', 'understanding', '<UNK>', 'algorithms', 'and', '<UNK>', 
+'behavior', 'helps', '<UNK>', 'make', 'informed', 'trade', '-', 'offs',
+ 'for', 'their', 'applications', '.']
+\end{verbatim}
+
+\textbf{SentencePiece Tokens:}
+\begin{verbatim}
+['_When', '_training', '_language', '_models', ',', '_token', 'ization',
+ '_choices', '_can', '_greatly', '_affect', '_performance', ',', '_memory',
+  '_usage', ',', '_and', '_general', 'ization', ';', '_understanding', '_sub',
+   'word', '_algorithms', '_and', '_OO', 'V', '_behavior', '_helps', '_pract', 
+   'ition', 'ers', '_make', '_informed', '_trade', '-', 'offs', '_for', 
+   '_their', '_applications', '.']
+\end{verbatim}
+
+\section{Dyskusja}
+Krótka interpretacja oczekiwanych efektów:
+\begin{itemize}
+  \item Pretrenowany tokenizer (BPE) zwykle ma niską średnią tokens/word dla angielskich tekstów i niewielką liczbę OOV-ów przy porównaniu do prostego whitespace-tokenizera.
+  \item Whitespace tokenizer łatwo wykrywa słowa jako osobne jednostki, ale ze względu na ograniczony słownik może mieć wysoki udział OOV; to wpływa na jakość modelu i może zwiększać tokens/word przez zamianę na \texttt{<UNK>} lub pozostawianie niepodzielonych wieloczłonowych tokenów.
+  \item SentencePiece (BPE) zwykle łączy zalety obu podejść: umiarkowana liczba tokenów/word, niskie OOV dzięki subwordom, i przewidywalny słownik do eksperymentów.
+\end{itemize}
+
+\section{Wnioski i dalsze prace}
+Wnioski po analizie porównawczej należy wypełnić na podstawie otrzymanych wyników. Potencjalne kierunki rozszerzeń:
+\begin{itemize}
+  \item analizować wpływ różnych wielkości słownika $N$ (np. 8k, 16k, 32k),
+  \item testować warianty SentencePiece (unigram vs BPE),
+  \item powtarzać eksperymenty na innych zbiorach (np. Wikipedia) oraz z większymi modelami, aby sprawdzić skalowalność obserwacji,
+\end{itemize}
+
+\end{document}
