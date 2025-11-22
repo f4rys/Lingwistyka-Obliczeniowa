@@ -8,8 +8,9 @@ dependencies = [
     "datasets>=4.2.0",
     "torch>=2.2.0",
     "transformers>=4.41.0",
-    "ipykernel>=7.0.1",
     "jupyter>=1.1.1",
     "sentencepiece>=0.1.99",
     "scikit-learn>=1.7.2",
+    "ipykernel==6.31.0",
+    "matplotlib>=3.10.7",
 ]
