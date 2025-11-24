@@ -1,0 +1,105 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{float}
+\newcommand{\placeholder}[1]{\texttt{#1}}
+\geometry{margin=2.5cm}
+
+\title{Fine-Tuning vs. Training from Scratch \\Lingwistyka Obliczeniowa | Laboratorium 3}
+\author{Wojciech Bartoszek}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Cel i zakres zadania}
+Celem laboratorium było porównanie dwóch podejść do trenowania modeli językowych typu decoder-only w zadaniu klasyfikacji tekstu: trenowania małego modelu od podstaw (from scratch) oraz dostrajania (fine-tuning) modelu pretrenowanego.
+
+\section{Zbiór danych}
+Wybrano zbiór danych \textbf{Polish Youth Slang Classification} \\ (\texttt{jziebura/polish\_youth\_slang\_classification}).
+\begin{itemize}
+    \item Liczba klas: 3 (Negative, Neutral, Positive)
+    \item Podział: Train / Val / Test
+    \item Liczba przykładów treningowych: 3469
+    \item Liczba przykładów walidacyjnych: 434
+    \item Liczba przykładów testowych: 434
+    \item Rozkład klas (Train): 0: 1013, 1: 1777, 2: 679
+\end{itemize}
+
+\section{Modele}
+
+\subsection{Model trenowany od podstaw (From Scratch)}
+Mały model typu Transformer (Decoder-only) z głowicą klasyfikującą. Parametry modelu zostały dobrane w procesie optymalizacji hiperparametrów (Optuna, 500 prób) w celu minimalizacji straty walidacyjnej.
+\begin{itemize}
+    \item Architektura: Transformer Decoder
+    \item Liczba parametrów: 3,410,627
+    \item Optymalizacja: AdamW, Scheduler z rozgrzewką (warmup)
+\end{itemize}
+
+\subsection{Model dostrajany (Fine-Tuned)}
+Model pretrenowany pobrany z Hugging Face: \texttt{sdadas/polish-gpt2-small}.
+\begin{itemize}
+    \item Nazwa modelu: sdadas/polish-gpt2-small
+    \item Liczba parametrów całkowita: 125,952,768
+    \item Liczba parametrów trenowalnych: 7,090,176
+    \item Metoda dostrajania: Frozen Backbone (oprócz ostatniej warstwy) + Head Fine-Tuning
+\end{itemize}
+
+\section{Wyniki eksperymentów}
+
+\subsection{Porównanie jakości klasyfikacji}
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Model & Accuracy & F1 Score \\
+\midrule
+From Scratch & 0.5645 & 0.5047 \\
+Fine-Tuned & 0.6866 & 0.6852 \\
+\bottomrule
+\end{tabular}
+\caption{Wyniki klasyfikacji na zbiorze testowym}
+\end{table}
+
+\subsection{Czas treningu i wnioskowania}
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Model & Training Time (Total) & Training Time (per epoch) & Inference Time (ms/sample) \\
+\midrule
+From Scratch & 111.31 s & $\approx$ 5.5 s & 1.09 ms \\
+Fine-Tuned & 2391.58 s & $\approx$ 478 s & 39.45 ms \\
+\bottomrule
+\end{tabular}
+\caption{Porównanie czasów treningu i wnioskowania}
+\end{table}
+
+\subsection{Wykresy uczenia}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{accuracy_history.png}
+    \caption{Historia dokładności (Accuracy) podczas treningu}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{loss_history.png}
+    \caption{Historia funkcji straty (Loss) podczas treningu}
+\end{figure}
+
+\section{Wnioski}
+Zgodnie z oczekiwaniami, model dostrajany (Fine-Tuned) osiągnął lepsze wyniki jakościowe (Accuracy 0.6866, F1 0.6852) niż model trenowany od podstaw. Jednakże, model From Scratch (Accuracy 0.5645, F1 0.5047) poradził sobie zaskakująco dobrze, co jest zasługą przeprowadzonej optymalizacji hiperparametrów (500 prób w Optuna). Pozwoliło to na znalezienie konfiguracji, która skutecznie unika przeuczenia (overfittingu), co widać po stabilnym spadku funkcji straty na zbiorze walidacyjnym.
+
+W przypadku modelu dostrajanego, mimo lepszych wyników końcowych, zaobserwowano lekkie tendencje do przeuczenia w ostatnich epokach (wzrost straty walidacyjnej z 0.79 do 0.88), podczas gdy strata treningowa nadal malała.
+
+Warto również zwrócić uwagę na koszty obliczeniowe. Model From Scratch jest znacznie mniejszy (3.4M vs 126M parametrów) i trenuje się błyskawicznie (niecałe 2 minuty vs 40 minut), a jego czas inferencji jest rzędu 1 ms na próbkę, co czyni go bardzo wydajnym rozwiązaniem w środowiskach o ograniczonych zasobach, mimo nieco niższej dokładności.
+
+\end{document}
