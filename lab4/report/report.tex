@@ -1,0 +1,157 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{margin=2.5cm}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{orange},
+    breaklines=true,
+    frame=single
+}
+
+\title{Memory-Efficient Transformer Training Techniques \\Lingwistyka Obliczeniowa | Laboratorium 4}
+\author{Wojciech Bartoszek}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Cel i zakres zadania}
+Celem laboratorium było porównanie nowoczesnych technik optymalizacji pamięci podczas trenowania modeli Transformer. Dla identycznego zbioru danych, architektury modelu i hiperparametrów (poza ustawieniami związanymi z pamięcią) przeprowadzono eksperymenty mierzące:
+\begin{itemize}
+    \item Zużycie pamięci GPU
+    \item Maksymalny rozmiar batcha mieszczący się w pamięci
+    \item Szybkość trenowania (czas na krok i całkowity czas dla 1 epoki)
+    \item Końcową jakość modelu (perplexity po 1 epoce)
+\end{itemize}
+
+\section{Przegląd technik optymalizacji}
+
+\subsection{Baseline (TF32/FP32)}
+Trening w pełnej precyzji z wykorzystaniem TF32 dla operacji macierzowych. Służy jako punkt odniesienia dla pozostałych technik.
+
+\subsection{BF16 Mixed Precision}
+Automatyczne mieszanie precyzji (Automatic Mixed Precision) z użyciem typu BFloat16. Wagi i aktywacje są przechowywane w 16-bitowym formacie, co zmniejsza zapotrzebowanie na pamięć o około 50\%.
+
+\subsection{FlashAttention}
+FlashAttention 2 to zoptymalizowana implementacja mechanizmu uwagi, która:
+\begin{itemize}
+    \item Unika materializacji pełnej macierzy uwagi $O(n^2)$
+    \item Wykorzystuje tiling dla optymalnego wykorzystania cache GPU
+    \item Redukuje złożoność pamięciową do $O(n)$
+\end{itemize}
+
+\subsection{Windowed (Local) Attention}
+Uwaga okienkowa ogranicza zakres uwagi do lokalnego kontekstu (sliding window). Zamiast uwagi do wszystkich tokenów, każdy token może zwracać uwagę tylko na $w$ poprzednich tokenów, gdzie $w$ to rozmiar okna.
+
+\subsection{Gradient Checkpointing}
+Gradient checkpointing (activation checkpointing) to technika wymiany obliczenia na pamięć. Zamiast przechowywać wszystkie aktywacje pośrednie podczas przejścia w przód, są one przeliczane podczas przejścia wstecznego.
+
+\section{Konfiguracja eksperymentalna}
+
+\subsection{Zbiór danych}
+\begin{itemize}
+    \item Zbiór: \texttt{mikex86/stackoverflow-posts}
+    \item Pole: Body (treść postów)
+    \item Tryb: Streaming
+    \item Zadanie: Modelowanie języka (next-token prediction)
+\end{itemize}
+
+\subsection{Architektura modelu}
+Decoder-only Transformer z następującymi parametrami:
+\begin{itemize}
+    \item Wymiar embeddings: 256
+    \item Liczba głów uwagi: 8
+    \item Liczba warstw: 4
+    \item Wymiar FFN: 1024
+    \item Maksymalna długość sekwencji: 512
+    \item Dropout: 0.1
+    \item Tokenizer: GPT-2 (vocab\_size = 50257)
+\end{itemize}
+
+\subsection{Hiperparametry treningu}
+\begin{itemize}
+    \item Kroki na epokę: 200
+    \item Długość sekwencji: 256
+    \item Learning rate: $3 \times 10^{-4}$
+    \item Warmup steps: 200
+    \item Gradient clipping: 1.0
+    \item Optymalizator: AdamW
+\end{itemize}
+
+\subsection{Środowisko}
+Eksperymenty przeprowadzono w następującym środowisku sprzętowo-programowym:
+\begin{itemize}
+    \item \textbf{PyTorch:} 2.8.0+cu128
+    \item \textbf{CUDA:} 12.8
+    \item \textbf{GPU:} NVIDIA GeForce RTX 4090
+    \item \textbf{GPU Memory:} 25.26 GB
+\end{itemize}
+
+\section{Wyniki eksperymentów}
+
+Wyniki przeprowadzonych eksperymentów przedstawiono w Tabeli \ref{tab:results}. Porównano w niej maksymalny rozmiar batcha, zużycie pamięci, czas treningu oraz końcową jakość modelu (perplexity na zbiorze walidacyjnym).
+
+\begin{table}[H]
+    \centering
+    \caption{Porównanie technik optymalizacji treningu Transformerów}
+    \label{tab:results}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{lccccc}
+        \toprule
+        \textbf{Metoda} & \textbf{Max Batch} & \textbf{Peak Memory (GB)} & \textbf{Step Time (s)} & \textbf{Total Time (s)} & \textbf{Val PPL} \\
+        \midrule
+        Baseline (TF32/FP32) & 64 & 15.79 & 0.080 & 16.06 & 1083.63 \\
+        BF16 Mixed Precision & 64 & 16.14 & 0.061 & 12.14 & 1082.19 \\
+        FlashAttention + BF16 & 64 & 15.20 & 0.044 & 8.89 & 1083.40 \\
+        Windowed Attn + FlashAttn & 64 & 15.20 & 0.043 & 8.63 & 1083.40 \\
+        Grad Checkpointing + BF16 & 64 & 14.57 & 0.071 & 14.14 & 1082.79 \\
+        \bottomrule
+    \end{tabular}
+    }
+\end{table}
+
+Poniżej przedstawiono wykresy porównujące poszczególne metryki dla badanych metod.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{comparison_plots.png}
+    \caption{Porównanie zużycia pamięci, czasu treningu i maksymalnego rozmiaru batcha.}
+    \label{fig:comparison}
+\end{figure}
+
+\section{Analiza wyników i wnioski}
+
+\subsection{Zużycie pamięci}
+Najmniejsze zużycie pamięci szczytowej (Peak Memory) zaobserwowano dla techniki \textbf{Gradient Checkpointing} (14.57 GB). Jest to zgodne z oczekiwaniami, ponieważ technika ta nie przechowuje wszystkich aktywacji pośrednich, lecz przelicza je w razie potrzeby. \textbf{FlashAttention} oraz \textbf{Windowed Attention} również wykazały mniejsze zużycie pamięci (15.20 GB) w porównaniu do Baseline (15.79 GB). Co ciekawe, samo użycie \textbf{BF16 Mixed Precision} w tym eksperymencie wykazało nieco wyższe zużycie pamięci szczytowej (16.14 GB) niż Baseline. Może to wynikać z narzutu związanego z przechowywaniem kopii wag w FP32 (dla optymalizatora) oraz specyfiki alokatora pamięci PyTorch w tym konkretnym przypadku.
+
+\subsection{Szybkość treningu}
+Najszybszymi metodami okazały się \textbf{FlashAttention} oraz \textbf{Windowed Attention}, osiągając czas kroku na poziomie ok. 0.043-0.044 s, co stanowi niemal dwukrotne przyspieszenie względem Baseline (0.080 s). Wynika to z efektywnego wykorzystania pamięci cache GPU i redukcji transferów pamięci. \textbf{BF16 Mixed Precision} również przyspieszyło trening (0.061 s/krok) dzięki mniejszej precyzji obliczeń. \textbf{Gradient Checkpointing} (0.071 s/krok) był wolniejszy niż czyste BF16 czy FlashAttention, co jest kosztem ponoszonym za oszczędność pamięci – konieczność ponownego obliczania aktywacji w fazie backward wydłuża czas obliczeń. Mimo to, nadal był szybszy od Baseline.
+
+\subsection{Jakość modelu}
+Wszystkie metody osiągnęły bardzo zbliżone wyniki Perplexity na zbiorze walidacyjnym (ok. 1082-1083). Oznacza to, że zastosowane optymalizacje (obniżona precyzja BF16, aproksymacje w FlashAttention, czy gradient checkpointing) nie wpływają negatywnie na proces uczenia i jakość końcowego modelu w tym zadaniu.
+
+\subsection{Podsumowanie}
+\begin{itemize}
+    \item \textbf{FlashAttention} oferuje najlepszy kompromis między szybkością a zużyciem pamięci, znacząco przyspieszając trening przy jednoczesnej redukcji zapotrzebowania na VRAM.
+    \item \textbf{Gradient Checkpointing} jest najlepszym wyborem, gdy priorytetem jest minimalizacja zużycia pamięci (np. aby zmieścić większy model), nawet kosztem nieco dłuższego czasu treningu.
+    \item \textbf{BF16} samo w sobie przyspiesza obliczenia, ale w połączeniu z innymi technikami (jak FlashAttention) daje najlepsze rezultaty.
+    \item Wszystkie techniki są bezpieczne z punktu widzenia jakości modelu (brak degradacji wyników).
+\end{itemize}
+
+\end{document}
