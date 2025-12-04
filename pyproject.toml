@@ -3,14 +3,22 @@ name = "comp_ling"
 version = "0.1.0"
 description = "Computational linguistics"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "datasets>=4.2.0",
-    "torch>=2.2.0",
     "transformers>=4.41.0",
     "jupyter>=1.1.1",
     "sentencepiece>=0.1.99",
     "scikit-learn>=1.7.2",
     "ipykernel==6.31.0",
     "matplotlib>=3.10.7",
+    "flash-attn",
+    "torch==2.8.0",
 ]
+
+[tool.uv.sources]
+flash-attn = { url = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.4.10/flash_attn-2.8.2+cu128torch2.8-cp312-cp312-win_amd64.whl" }
+
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu128"
+default = true
