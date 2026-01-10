@@ -38,6 +38,7 @@ def exact_match(pred: str, gold: str) -> bool:
 import json
 from pathlib import Path
 from datetime import datetime, timezone
+import time
 import pandas as pd
 
 
@@ -199,3 +200,283 @@ def compute_aggregated_scores(results_df: pd.DataFrame, annotations_df: pd.DataF
         std_score=('score', 'std')
     ).reset_index()
     return agg
+
+
+# --- Runtime helpers moved from the notebook ---
+
+def query_chat(client, model: str, prompt: str, temperature: float = 0.0, max_tokens: int = 1024):
+    """Query a model using the client.chat interface. Returns a dict with content and metadata."""
+    messages = [{'role': 'user', 'content': prompt}]
+    start = time.time()
+    try:
+        resp = client.chat(model=model, messages=messages)
+        elapsed = time.time() - start
+        content = resp['message']['content'] if isinstance(resp, dict) else getattr(resp, 'message', {}).get('content', '')
+        return {
+            'model': model,
+            'prompt': prompt,
+            'response': content,
+            'elapsed': elapsed,
+            'success': True,
+            'raw': resp
+        }
+    except Exception as e:
+        elapsed = time.time() - start
+        return {
+            'model': model,
+            'prompt': prompt,
+            'response': '',
+            'elapsed': elapsed,
+            'success': False,
+            'error': str(e)
+        }
+
+
+def query_generate(client, model: str, prompt: str, temperature: float = 0.0, max_tokens: int = 1024):
+    start = time.time()
+    try:
+        resp = client.generate(model=model, prompt=prompt)
+        elapsed = time.time() - start
+        content = resp['message']['content'] if isinstance(resp, dict) else getattr(resp, 'message', {}).get('content', '')
+        return {
+            'model': model,
+            'prompt': prompt,
+            'response': content,
+            'elapsed': elapsed,
+            'success': True,
+            'raw': resp
+        }
+    except Exception as e:
+        elapsed = time.time() - start
+        return {
+            'model': model,
+            'prompt': prompt,
+            'response': '',
+            'elapsed': elapsed,
+            'success': False,
+            'error': str(e)
+        }
+
+
+def save_prompt_run(task_id, run_entry, tasks_dir: str = None):
+    """Persist a single run entry back to the corresponding task JSON file in `tasks_dir`.
+    If `tasks_dir` is not provided it will attempt to write to './tasks'."""
+    base = Path(tasks_dir) if tasks_dir else Path('.') / 'tasks'
+    candidates = list(base.glob(f"{int(task_id)}_*.json"))
+    if not candidates:
+        return
+    p = candidates[0]
+    d = json.loads(p.read_text(encoding='utf-8'))
+    d.setdefault('runs', []).append(run_entry)
+    p.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+
+
+def run_evaluation(models: list, strategies: list, tasks: list, examples: dict, client, output_dir: str = None, save_prefix: str = 'results', dev_examples: dict = None, tasks_dir: str = None):
+    """Run the experiment loop across tasks, models and strategies using the provided `client`.
+    Returns a list of run dicts and writes JSONL and CSV summary to `output_dir` (defaults to ./outputs).
+    """
+    out_dir = Path(output_dir) if output_dir else Path('.') / 'outputs'
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Normalize and validate models
+    norm_models = validate_models(models)
+
+    # Preview experiments
+    expected_runs, warnings = preview_experiments(tasks, norm_models, strategies)
+    if warnings:
+        for w in warnings:
+            print('Warning:', w)
+    print(f'Running {expected_runs} experiment runs (skipping CoT for reasoning models)')
+
+    results = []
+    try:
+        from tqdm import trange
+        pbar = trange(expected_runs, desc='Running experiments')
+        use_pbar = True
+    except Exception:
+        pbar = None
+        use_pbar = False
+
+    for task in tasks:
+        task_id = task['id']
+        ex = examples.get(task_id, {})
+        for model in norm_models:
+            for strategy in strategies:
+                if should_skip_cot(model, strategy):
+                    results.append({
+                        'task_id': task_id,
+                        'task_name': task['name'],
+                        'strategy': strategy,
+                        'model': model['name'],
+                        'prompt': None,
+                        'response': '',
+                        'elapsed': 0.0,
+                        'success': False,
+                        'error': 'CoT skipped for reasoning model',
+                        'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+                    })
+                    if use_pbar:
+                        pbar.update(1)
+                    continue
+
+                model_name = model['name']
+                if strategy == 'zero':
+                    prompt = zero_shot_prompt(task, ex.get('input'))
+                elif strategy == 'few':
+                    dev = dev_examples.get(task_id, [])[:2] if dev_examples else []
+                    prompt = few_shot_prompt(task, dev, ex.get('input'))
+                elif strategy == 'cot':
+                    prompt = cot_prompt(task, ex.get('input'))
+                else:
+                    raise ValueError('Unknown strategy')
+
+                r = query_chat(client, model_name, prompt)
+                entry = {
+                    'task_id': task_id,
+                    'task_name': task['name'],
+                    'strategy': strategy,
+                    'model': model_name,
+                    'prompt': prompt,
+                    'response': r.get('response',''),
+                    'elapsed': r.get('elapsed', None),
+                    'success': r.get('success', False),
+                    'error': r.get('error', None),
+                    'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+                }
+                results.append(entry)
+
+                # Persist the prompt and response back into the per-task JSON file
+                save_prompt_run(task_id, {
+                    'timestamp': entry['timestamp'],
+                    'model': model_name,
+                    'strategy': strategy,
+                    'prompt': prompt,
+                    'response': entry['response'],
+                    'elapsed': entry['elapsed'],
+                    'success': entry['success'],
+                    'error': entry['error']
+                }, tasks_dir=tasks_dir)
+
+                if use_pbar:
+                    pbar.update(1)
+    if use_pbar and pbar is not None:
+        pbar.close()
+
+    # Save results
+    ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+    out_json = out_dir / f"{save_prefix}_{ts}.jsonl"
+    with open(out_json, 'w', encoding='utf-8') as fh:
+        for r in results:
+            fh.write(json.dumps(r, ensure_ascii=False) + '\n')
+
+    df = pd.DataFrame(results)
+    csv_path = out_dir / f"{save_prefix}_{ts}.csv"
+    df.to_csv(csv_path, index=False)
+
+    print(f"Saved {len(results)} results to {out_json} and {csv_path}")
+    return results
+
+
+def token_overlap(pred: str, gold: str) -> float:
+    if not gold or not pred:
+        return 0.0
+    def get_tokens(s):
+        return set(re.findall(r'\w+', s.lower()))
+    
+    pred_tokens = get_tokens(pred)
+    gold_tokens = get_tokens(gold)
+    
+    if not gold_tokens:
+        return 0.0
+        
+    intersect = pred_tokens.intersection(gold_tokens)
+    # Recall-oriented: how many of the gold tokens did the model produce?
+    return len(intersect) / len(gold_tokens)
+
+
+def compute_metrics(results: list, examples: dict):
+    df = pd.DataFrame(results)
+    # add expected where available
+    df['expected'] = df['task_id'].map(lambda tid: examples.get(tid, {}).get('expected'))
+    
+    # Simple exact match
+    df['exact_match'] = df.apply(lambda r: exact_match(r['response'], r['expected']) if r['expected'] else None, axis=1)
+    
+    # Soft token overlap (better for open-ended answers)
+    df['overlap_score'] = df.apply(lambda r: token_overlap(r['response'], r['expected']) if r['expected'] else 0.0, axis=1)
+
+    # Compute per-task per-model-strategy metrics
+    agg = df.groupby(['task_id','task_name','model','strategy']).agg(
+        n=('response','size'),
+        n_exact=('exact_match', lambda x: sum(1 for v in x if v is True)),
+        avg_overlap=('overlap_score', 'mean')
+    ).reset_index()
+    agg['accuracy'] = agg['n_exact'] / agg['n']
+    return df, agg
+
+
+def get_judge_score(task, prompt, response, client, judge_model='deepseek-r1:7b'):
+    """Use an LLM to judge the quality of a response on a scale of 0-5."""
+    if not response:
+        return 0.0
+        
+    criteria = task.get('eval_criteria', 'Correctness and relevance')
+    task_name = task.get('name', 'General Task')
+    
+    judge_prompt = f"""Evaluate the following LLM response based on the task description and evaluation criteria.
+    
+Task: {task_name}
+Criteria: {criteria}
+
+User Prompt: {prompt}
+LLM Response: {response}
+
+Give a score from 0 to 5, where:
+0: Completely irrelevant or incorrect
+1: Major issues, barely follows prompt
+2: Follows prompt but has significant errors
+3: Good response, minor issues
+4: Very good response, follows almost all criteria
+5: Perfect response
+
+Return ONLY the numeric score (0, 1, 2, 3, 4, or 5). Do not provide any explanation."""
+
+    try:
+        # Use simple chat query
+        messages = [{'role': 'user', 'content': judge_prompt}]
+        res = client.chat(model=judge_model, messages=messages)
+        content = res['message']['content'] if isinstance(res, dict) else getattr(res, 'message', {}).get('content', '')
+        
+        # Remove reasoning blocks if present (DeepSeek-R1 style)
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+        
+        # Find the first digit in the response
+        match = re.search(r'([0-5])', content)
+        if match:
+            return float(match.group(1))
+        return 0.0
+    except Exception as e:
+        print(f"Error judging response: {e}")
+        return 0.0
+
+
+def run_judge_evaluation(results_df, tasks, client, judge_model='nemotron-3-nano:latest'):
+    print(f"Judging {len(results_df)} responses using {judge_model}...")
+    scores = []
+    
+    # Map tasks by ID for easy lookup
+    task_map = {t['id']: t for t in tasks}
+    
+    for _, row in tqdm(results_df.iterrows(), total=len(results_df)):
+        # Skip if error occurred during generation
+        if not row['success'] or not row['response']:
+            scores.append(0.0)
+            continue
+            
+        task = task_map.get(row['task_id'], {})
+        score = get_judge_score(task, row['prompt'], row['response'], client, judge_model)
+        scores.append(score)
+        
+    results_df['judge_score'] = scores
+    results_df['normalized_judge_score'] = results_df['judge_score'] / 5.0
+    return results_df
