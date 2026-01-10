@@ -1,0 +1,35 @@
+{
+  "id": 7,
+  "name": "Language Understanding",
+  "description": "Identify ambiguity or paraphrase",
+  "eval_criteria": "Correct interpretation",
+  "scoring": "Use exact answers where possible; otherwise annotate 0-2 for quality of interpretation (2 = clearly correct).",
+  "dev_examples": [
+    {
+      "input": "What is ambiguous about: 'I saw her duck'",
+      "output": "It could mean she lowered her head or that she owns a bird called a duck"
+    },
+    {
+      "input": "Paraphrase: 'The man didn't go to the party because he was sick'",
+      "output": "He skipped the party due to illness"
+    },
+    {
+      "input": "Resolve the ambiguity: 'Visiting relatives can be boring'",
+      "output": "Could mean that relatives who visit are boring, or that the act of visiting relatives is boring"
+    }
+  ],
+  "eval_example": {
+    "input": "Explain why 'I saw her duck' is ambiguous."
+  },
+  "eval_items": [
+    {
+      "input": "In the sentence 'When Ana met Bea, she was carrying an umbrella', who is 'she'?"
+    },
+    {
+      "input": "Does the sentence 'The committee decided to delay the vote' imply the vote happened?"
+    },
+    {
+      "input": "What does 'bank' most likely mean in 'The boat was tied to the bank'?"
+    }
+  ]
+}

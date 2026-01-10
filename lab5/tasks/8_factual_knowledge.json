@@ -1,0 +1,35 @@
+{
+  "id": 8,
+  "name": "Factual Knowledge",
+  "description": "Answer general knowledge questions",
+  "eval_criteria": "Factual accuracy",
+  "scoring": "Objective: exact match where possible (1 correct, 0 incorrect). Use short canonical answers (e.g., 'Ottawa').",
+  "dev_examples": [
+    {
+      "input": "Who wrote 'Pride and Prejudice'?",
+      "output": "Jane Austen"
+    },
+    {
+      "input": "What is the capital of France?",
+      "output": "Paris"
+    },
+    {
+      "input": "What element has the chemical symbol Fe?",
+      "output": "Iron"
+    }
+  ],
+  "eval_example": {
+    "input": "Who discovered penicillin?"
+  },
+  "eval_items": [
+    {
+      "input": "What is the capital of Canada?"
+    },
+    {
+      "input": "Who developed the theory of general relativity?"
+    },
+    {
+      "input": "In what year did the Apollo 11 mission land on the Moon?"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": 6,
+  "name": "Common Sense Reasoning",
+  "description": "Answer everyday reasoning questions",
+  "eval_criteria": "Plausibility and correctness",
+  "scoring": "Score 0-2 for plausibility and safety (2 = plausible, actionable, and safe).",
+  "dev_examples": [
+    {
+      "input": "If you drop a glass and it falls, what will likely happen?",
+      "output": "The glass is likely to break due to impact"
+    },
+    {
+      "input": "If it is cloudy and the forecast says light drizzle, what should you bring?",
+      "output": "An umbrella or light rain jacket"
+    },
+    {
+      "input": "If milk smells sour and is past its expiration date, what should you do?",
+      "output": "Do not drink it; discard it"
+    }
+  ],
+  "eval_example": {
+    "input": "If you see dark clouds and feel drops, what should you do?"
+  },
+  "eval_items": [
+    {
+      "input": "Why is it a bad idea to text while driving?"
+    },
+    {
+      "input": "Why should you check the expiration date on dairy products before buying?"
+    },
+    {
+      "input": "Why is it unwise to leave windows open during a heavy storm?"
+    }
+  ]
+}

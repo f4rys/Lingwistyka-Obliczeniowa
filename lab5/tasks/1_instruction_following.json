@@ -1,0 +1,35 @@
+{
+  "id": 1,
+  "name": "Instruction Following",
+  "description": "Follow instructions accurately",
+  "eval_criteria": "Correctness, completeness, instruction adherence",
+  "scoring": "Objective where possible: use exact match for concrete steps; otherwise annotate 0-2 (0 incorrect, 1 partial, 2 correct and complete).",
+  "dev_examples": [
+    {
+      "input": "Translate the following instruction into a short checklist: 'Prepare a 3-slide summary for tomorrow's meeting'",
+      "output": "1. Open slides app\n2. Create 3 slides: Title, Summary, Next Steps\n3. Add brief bullet points\n4. Save and share"
+    },
+    {
+      "input": "Summarize: 'List 3 benefits of unit testing'",
+      "output": "1. Finds bugs early\n2. Facilitates refactoring\n3. Documents expected behavior"
+    },
+    {
+      "input": "Turn this request into numbered steps: 'Back up my laptop before traveling'",
+      "output": "1. Connect to power and stable Wi‑Fi\n2. Run full cloud backup; verify status\n3. Copy critical files to encrypted USB\n4. Safely eject backup media"
+    }
+  ],
+  "eval_example": {
+    "input": "Explain in two sentences how to write a clear function docstring."
+  },
+  "eval_items": [
+    {
+      "input": "Provide a 4-step checklist to shut down a desktop computer safely."
+    },
+    {
+      "input": "Rewrite this request as numbered instructions: 'Prepare a weekly report and email it to the team by Friday 3pm.'"
+    },
+    {
+      "input": "List three ordered steps for brewing a cup of pour-over coffee."
+    }
+  ]
+}

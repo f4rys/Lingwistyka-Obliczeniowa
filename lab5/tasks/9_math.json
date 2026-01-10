@@ -1,0 +1,35 @@
+{
+  "id": 9,
+  "name": "Mathematical Problem Solving",
+  "description": "Solve math problems",
+  "eval_criteria": "Correct final answer",
+  "scoring": "Objective: exact numeric or symbolic match; prefer simplified canonical forms (1 correct, 0 incorrect).",
+  "dev_examples": [
+    {
+      "input": "Compute: 23 * 17",
+      "output": "391"
+    },
+    {
+      "input": "Solve: If x+2=7, what is x?",
+      "output": "x=5"
+    },
+    {
+      "input": "A rectangle is 5 units long and 3 units wide. What is its area?",
+      "output": "15"
+    }
+  ],
+  "eval_example": {
+    "input": "Compute: If 3x + 5 = 20, what is x?"
+  },
+  "eval_items": [
+    {
+      "input": "What is the derivative of x^3 + 2x?"
+    },
+    {
+      "input": "Simplify: (2/3) + (1/6)"
+    },
+    {
+      "input": "If a triangle has sides 3, 4, 5, what is its area?"
+    }
+  ]
+}

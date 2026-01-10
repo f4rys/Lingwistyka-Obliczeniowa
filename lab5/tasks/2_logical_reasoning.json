@@ -1,0 +1,35 @@
+{
+  "id": 2,
+  "name": "Logical Reasoning",
+  "description": "Solve logical reasoning problems",
+  "eval_criteria": "Correct solution and sound reasoning",
+  "scoring": "Grade 0-2 based on correctness and quality of justification (2 = correct with clear reasoning).",
+  "dev_examples": [
+    {
+      "input": "If all bloops are razzies and all razzies are glims, are all bloops glims? Explain.",
+      "output": "Yes; by transitivity: bloops -> razzies -> glims"
+    },
+    {
+      "input": "If A implies B and B implies not C, what can you say about A and C?",
+      "output": "If A then not C (through B), so A implies not C."
+    },
+    {
+      "input": "Either it rains or it is sunny. It is not sunny. What follows?",
+      "output": "By disjunctive syllogism, it must be raining."
+    }
+  ],
+  "eval_example": {
+    "input": "If all A are B and some B are C, can we conclude some A are C? Explain."
+  },
+  "eval_items": [
+    {
+      "input": "If no cats are dogs and some pets are cats, can any pets be dogs? Explain."
+    },
+    {
+      "input": "Either the server is down or the network is misconfigured. The server responds to ping. What follows?"
+    },
+    {
+      "input": "All programmers are problem solvers. Some designers are programmers. What can we conclude about some designers?"
+    }
+  ]
+}

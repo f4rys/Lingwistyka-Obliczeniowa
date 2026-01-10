@@ -1,0 +1,35 @@
+{
+  "id": 5,
+  "name": "Reading Comprehension",
+  "description": "Answer questions about text",
+  "eval_criteria": "Accuracy and evidence",
+  "scoring": "Objective where possible: exact match for factoid answers; use 0-2 rubric for explanatory answers (2 = correct and supported by evidence).",
+  "dev_examples": [
+    {
+      "input": "Read: 'Anna went to the store. She bought apples.' Question: Who bought apples?",
+      "output": "Anna"
+    },
+    {
+      "input": "Read: 'The committee appointed John because he had experience.' Why was John appointed?",
+      "output": "Because he had experience"
+    },
+    {
+      "input": "Read: 'Maya left her umbrella at the cafe, but she remembered to take her notebook.' What did she forget?",
+      "output": "She forgot her umbrella"
+    }
+  ],
+  "eval_example": {
+    "input": "Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?"
+  },
+  "eval_items": [
+    {
+      "input": "Given the passage, answer: What was the main reason the committee delayed the decision?"
+    },
+    {
+      "input": "After reading the excerpt, explain why the narrator distrusts the stranger."
+    },
+    {
+      "input": "From the provided article, summarize the key factor that led to the project's failure."
+    }
+  ]
+}

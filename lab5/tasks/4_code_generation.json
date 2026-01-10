@@ -1,0 +1,35 @@
+{
+  "id": 4,
+  "name": "Code Generation",
+  "description": "Write small code snippets",
+  "eval_criteria": "Correctness, compilation when applicable",
+  "scoring": "Objective check where possible: run or lint code; for functions provide unit-testable correctness (0/1).",
+  "dev_examples": [
+    {
+      "input": "Write a Python function to reverse a list in-place",
+      "output": "def reverse_in_place(lst):\n    i, j = 0, len(lst)-1\n    while i < j:\n        lst[i], lst[j] = lst[j], lst[i]\n        i += 1; j -= 1"
+    },
+    {
+      "input": "Write a JS function that returns the nth Fibonacci number (iterative)",
+      "output": "function fib(n){ let a=0,b=1; for(let i=0;i<n;i++){[a,b]=[b,a+b]} return a }"
+    },
+    {
+      "input": "Write a Python function that sorts a list of (name, score) tuples descending by score",
+      "output": "def sort_scores(items):\n    return sorted(items, key=lambda x: x[1], reverse=True)"
+    }
+  ],
+  "eval_example": {
+    "input": "Write a function in Python that returns True if a string is a palindrome."
+  },
+  "eval_items": [
+    {
+      "input": "Write a Python function `is_palindrome(s: str) -> bool` that ignores spaces and punctuation."
+    },
+    {
+      "input": "Given a list of integers, write Python code to group them by parity and return a dict with keys 'even' and 'odd'."
+    },
+    {
+      "input": "Write a Python snippet that reads a text file and counts the top 5 most frequent words (case-insensitive)."
+    }
+  ]
+}

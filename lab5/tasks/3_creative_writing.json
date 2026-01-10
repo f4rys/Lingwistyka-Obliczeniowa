@@ -1,0 +1,35 @@
+{
+  "id": 3,
+  "name": "Creative Writing",
+  "description": "Produce a short creative text",
+  "eval_criteria": "Fluency, creativity, coherence",
+  "scoring": "Subjective: annotate 0-2 (0 poor, 1 acceptable, 2 excellent) based on creativity, coherence, and fluency.",
+  "dev_examples": [
+    {
+      "input": "Write a 3-line haiku about autumn",
+      "output": "Leaves whisper softly\nCrimson carpets line my path\nCider warms my hands"
+    },
+    {
+      "input": "Write a witty two-sentence opening for a sci-fi short story",
+      "output": "They told us the stars were silent, but when the radio hummed, it sounded suspiciously like a grocery list. We were never meant to read the galaxy's shopping preferences."
+    },
+    {
+      "input": "Write a 50-word microfiction about a forgotten lighthouse",
+      "output": "The lighthouse blinked at no one. Its beam, stubborn as an old habit, swept fog and gulls alike. A lone keeper wound the crank, convinced ships still sailed his sea. In town, children pointed at the dark horizon, unsure whether to wish for storms or stories."
+    }
+  ],
+  "eval_example": {
+    "input": "Write a short, imaginative opening paragraph for a story about an ocean city."
+  },
+  "eval_items": [
+    {
+      "input": "Write a 3-line haiku about a train station in the rain at night."
+    },
+    {
+      "input": "Craft a 2-sentence gothic vignette set in an abandoned greenhouse."
+    },
+    {
+      "input": "Compose a brief comedic limerick about a programmer who forgets semicolons."
+    }
+  ]
+}
