@@ -31,5 +31,57 @@
     {
       "input": "Why is it unwise to leave windows open during a heavy storm?"
     }
+  ],
+  "runs": [
+    {
+      "timestamp": "2026-01-11T11:36:16.691801Z",
+      "model": "smollm:1.7b",
+      "strategy": "zero",
+      "prompt": "Task: Common Sense Reasoning\nDescription: Answer everyday reasoning questions\nEvaluation criteria: Plausibility and correctness\nInput: If you see dark clouds and feel drops, what should you do?\n\nPlease provide a concise, direct answer.",
+      "response": "Answer: Stay indoors!",
+      "elapsed": 0.3091239929199219,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:36:17.015016Z",
+      "model": "smollm:1.7b",
+      "strategy": "few",
+      "prompt": "Task: Common Sense Reasoning\nDescription: Answer everyday reasoning questions\nEvaluation criteria: Plausibility and correctness\n\nHere are a few examples:\nInput: If you drop a glass and it falls, what will likely happen?\nOutput: The glass is likely to break due to impact\n---\nInput: If it is cloudy and the forecast says light drizzle, what should you bring?\nOutput: An umbrella or light rain jacket\n---\nNow, Input: If you see dark clouds and feel drops, what should you do?\nPlease write Output:",
+      "response": "If you see dark clouds and feel drops, you should take precautions to stay dry.",
+      "elapsed": 0.32041406631469727,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:36:17.250498Z",
+      "model": "smollm:1.7b",
+      "strategy": "cot",
+      "prompt": "Task: Common Sense Reasoning\nDescription: Answer everyday reasoning questions\nEvaluation criteria: Plausibility and correctness\nInput: If you see dark clouds and feel drops, what should you do?\n\nPlease provide a concise, direct answer.\nLet's think step by step before answering.",
+      "response": "If you see dark clouds and feel drops, it is likely raining.",
+      "elapsed": 0.233443021774292,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:41:33.486343Z",
+      "model": "magistral:24b",
+      "strategy": "zero",
+      "prompt": "Task: Common Sense Reasoning\nDescription: Answer everyday reasoning questions\nEvaluation criteria: Plausibility and correctness\nInput: If you see dark clouds and feel drops, what should you do?\n\nPlease provide a concise, direct answer.",
+      "response": "**Summary:**\nThe observations are dark clouds and feeling raindrops, which typically indicate the start of rain with potential for more. The most common and immediate action in such a scenario is to take an umbrella to avoid getting wet. While seeking shelter is also valid (especially if weather worsens), taking an umbrella is directly related to addressing the rain.\n\n**Final Answer:**\nIf you see dark clouds and feel drops, you should **take an umbrella**.\n\n\\boxed{take an umbrella}",
+      "elapsed": 316.23389506340027,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:44:11.666077Z",
+      "model": "magistral:24b",
+      "strategy": "few",
+      "prompt": "Task: Common Sense Reasoning\nDescription: Answer everyday reasoning questions\nEvaluation criteria: Plausibility and correctness\n\nHere are a few examples:\nInput: If you drop a glass and it falls, what will likely happen?\nOutput: The glass is likely to break due to impact\n---\nInput: If it is cloudy and the forecast says light drizzle, what should you bring?\nOutput: An umbrella or light rain jacket\n---\nNow, Input: If you see dark clouds and feel drops, what should you do?\nPlease write Output:",
+      "response": "**Summary:**\nThe situation described involves seeing dark clouds and feeling raindrops. Dark clouds often precede heavier rainfall, and feeling drops indicates that precipitation has already started. In such scenarios, common sense dictates preparing against the rain to stay dry and comfortable. The most typical actions are bringing an umbrella or wearing a rain jacket, as these items protect against rain and are commonly used in everyday life when faced with unexpected rain showers.\n\nTherefore, the appropriate response is to bring an umbrella or wear a rain jacket.\n\n\\boxed{An\\ umbrella\\ or\\ a\\ rain\\ jacket}\n\nOutput: Bring an umbrella or wear a rain jacket.",
+      "elapsed": 158.17563128471375,
+      "success": true,
+      "error": null
+    }
   ]
 }

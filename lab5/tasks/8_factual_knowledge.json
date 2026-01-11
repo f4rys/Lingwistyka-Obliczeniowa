@@ -31,5 +31,57 @@
     {
       "input": "In what year did the Apollo 11 mission land on the Moon?"
     }
+  ],
+  "runs": [
+    {
+      "timestamp": "2026-01-11T11:52:25.464799Z",
+      "model": "smollm:1.7b",
+      "strategy": "zero",
+      "prompt": "Task: Factual Knowledge\nDescription: Answer general knowledge questions\nEvaluation criteria: Factual accuracy\nInput: Who discovered penicillin?\n\nPlease provide a concise, direct answer.",
+      "response": "Alexander Fleming discovered penicillin in 1928.",
+      "elapsed": 1.165607213973999,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:52:25.572579Z",
+      "model": "smollm:1.7b",
+      "strategy": "few",
+      "prompt": "Task: Factual Knowledge\nDescription: Answer general knowledge questions\nEvaluation criteria: Factual accuracy\n\nHere are a few examples:\nInput: Who wrote 'Pride and Prejudice'?\nOutput: Jane Austen\n---\nInput: What is the capital of France?\nOutput: Paris\n---\nNow, Input: Who discovered penicillin?\nPlease write Output:",
+      "response": "Alexander Fleming",
+      "elapsed": 0.10456418991088867,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:52:25.777736Z",
+      "model": "smollm:1.7b",
+      "strategy": "cot",
+      "prompt": "Task: Factual Knowledge\nDescription: Answer general knowledge questions\nEvaluation criteria: Factual accuracy\nInput: Who discovered penicillin?\n\nPlease provide a concise, direct answer.\nLet's think step by step before answering.",
+      "response": "Alexander Fleming is credited with discovering penicillin in 1928.",
+      "elapsed": 0.20337200164794922,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:53:08.846679Z",
+      "model": "magistral:24b",
+      "strategy": "zero",
+      "prompt": "Task: Factual Knowledge\nDescription: Answer general knowledge questions\nEvaluation criteria: Factual accuracy\nInput: Who discovered penicillin?\n\nPlease provide a concise, direct answer.",
+      "response": "**Summary:**\nAlexander Fleming is credited with discovering penicillin after observing that a mold (Penicillium) inhibited bacterial growth in 1928. While others like Florey and Chain further developed it into a usable drug, Fleming's initial observation is what led to its discovery.\n\n\\boxed{Alexander\\ Fleming}",
+      "elapsed": 43.06730389595032,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:54:10.709525Z",
+      "model": "magistral:24b",
+      "strategy": "few",
+      "prompt": "Task: Factual Knowledge\nDescription: Answer general knowledge questions\nEvaluation criteria: Factual accuracy\n\nHere are a few examples:\nInput: Who wrote 'Pride and Prejudice'?\nOutput: Jane Austen\n---\nInput: What is the capital of France?\nOutput: Paris\n---\nNow, Input: Who discovered penicillin?\nPlease write Output:",
+      "response": "**Summary**: Penicillin was discovered by Alexander Fleming in 1928 after he observed that a mold (Penicillium) inhibited bacterial growth in a Petri dish. While other scientists later played crucial roles in developing penicillin into a usable drug, Fleming is credited with its initial discovery.\n\nOutput: Alexander Fleming\n\n\\boxed{Alexander Fleming}",
+      "elapsed": 61.86150789260864,
+      "success": true,
+      "error": null
+    }
   ]
 }

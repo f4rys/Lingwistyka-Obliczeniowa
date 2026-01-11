@@ -31,5 +31,57 @@
     {
       "input": "From the provided article, summarize the key factor that led to the project's failure."
     }
+  ],
+  "runs": [
+    {
+      "timestamp": "2026-01-11T11:33:48.062762Z",
+      "model": "smollm:1.7b",
+      "strategy": "zero",
+      "prompt": "Task: Reading Comprehension\nDescription: Answer questions about text\nEvaluation criteria: Accuracy and evidence\nInput: Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?\n\nPlease provide a concise, direct answer.",
+      "response": "Mark put the keys on the table and left.",
+      "elapsed": 1.4230561256408691,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:33:48.474415Z",
+      "model": "smollm:1.7b",
+      "strategy": "few",
+      "prompt": "Task: Reading Comprehension\nDescription: Answer questions about text\nEvaluation criteria: Accuracy and evidence\n\nHere are a few examples:\nInput: Read: 'Anna went to the store. She bought apples.' Question: Who bought apples?\nOutput: Anna\n---\nInput: Read: 'The committee appointed John because he had experience.' Why was John appointed?\nOutput: Because he had experience\n---\nNow, Input: Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?\nPlease write Output:",
+      "response": "Input: Read: 'The committee appointed John because he had experience.' Why was John appointed?\nOutput: Because he had experience",
+      "elapsed": 0.41006898880004883,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:33:48.659912Z",
+      "model": "smollm:1.7b",
+      "strategy": "cot",
+      "prompt": "Task: Reading Comprehension\nDescription: Answer questions about text\nEvaluation criteria: Accuracy and evidence\nInput: Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?\n\nPlease provide a concise, direct answer.\nLet's think step by step before answering.",
+      "response": "Mark put the keys on the table and left.",
+      "elapsed": 0.1832568645477295,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:34:31.620830Z",
+      "model": "magistral:24b",
+      "strategy": "zero",
+      "prompt": "Task: Reading Comprehension\nDescription: Answer questions about text\nEvaluation criteria: Accuracy and evidence\nInput: Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?\n\nPlease provide a concise, direct answer.",
+      "response": "**Summary:**\nThe sentence states that Mark put the keys on the table before leaving. The question asks for the location where Mark placed the keys. From the sentence, it's clear that this location is explicitly mentioned as \"the table.\"\n\nTherefore, the concise and direct answer is:\n\n\\boxed{On\\ the\\ table}",
+      "elapsed": 42.958805084228516,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:36:16.377938Z",
+      "model": "magistral:24b",
+      "strategy": "few",
+      "prompt": "Task: Reading Comprehension\nDescription: Answer questions about text\nEvaluation criteria: Accuracy and evidence\n\nHere are a few examples:\nInput: Read: 'Anna went to the store. She bought apples.' Question: Who bought apples?\nOutput: Anna\n---\nInput: Read: 'The committee appointed John because he had experience.' Why was John appointed?\nOutput: Because he had experience\n---\nNow, Input: Read: 'Mark put the keys on the table and left.' Question: Where did Mark put the keys?\nPlease write Output:",
+      "response": "**Summary:**\nThe text states that Mark placed the keys on the table before leaving. The question asks for the location where Mark put the keys. By identifying the prepositional phrase indicating location ('on the table'), we determine this is the part of the sentence that answers the 'where' question.\n\nTherefore, the output is:\n\\boxed{on\\ the\\ table}",
+      "elapsed": 104.75383591651917,
+      "success": true,
+      "error": null
+    }
   ]
 }

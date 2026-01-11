@@ -31,5 +31,57 @@
     {
       "input": "List three ordered steps for brewing a cup of pour-over coffee."
     }
+  ],
+  "runs": [
+    {
+      "timestamp": "2026-01-11T11:00:28.368865Z",
+      "model": "smollm:1.7b",
+      "strategy": "zero",
+      "prompt": "Task: Instruction Following\nDescription: Follow instructions accurately\nEvaluation criteria: Correctness, completeness, instruction adherence\nInput: Explain in two sentences how to write a clear function docstring.\n\nPlease provide a concise, direct answer.",
+      "response": "A function docstring is a brief summary of the function's purpose and parameters that explains what it does and any assumptions or limitations. It should be written in a clear and concise manner, making it easy for others to understand how to use the function correctly.",
+      "elapsed": 0.6809592247009277,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:00:29.554643Z",
+      "model": "smollm:1.7b",
+      "strategy": "few",
+      "prompt": "Task: Instruction Following\nDescription: Follow instructions accurately\nEvaluation criteria: Correctness, completeness, instruction adherence\n\nHere are a few examples:\nInput: Translate the following instruction into a short checklist: 'Prepare a 3-slide summary for tomorrow's meeting'\nOutput: 1. Open slides app\n2. Create 3 slides: Title, Summary, Next Steps\n3. Add brief bullet points\n4. Save and share\n---\nInput: Summarize: 'List 3 benefits of unit testing'\nOutput: 1. Finds bugs early\n2. Facilitates refactoring\n3. Documents expected behavior\n---\nNow, Input: Explain in two sentences how to write a clear function docstring.\nPlease write Output:",
+      "response": "To write a clear function docstring, follow these steps:\n\n1. Start with a descriptive name for the function and its parameters.\n2. Provide a brief description of what the function does.\n3. Explain any assumptions or preconditions required to use the function correctly.\n4. Describe any potential side effects or exceptions that may be raised by the function.\n5. Include examples or usage instructions if necessary.\n6. Use proper grammar, spelling, and punctuation throughout the docstring.",
+      "elapsed": 1.1822471618652344,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:00:30.098790Z",
+      "model": "smollm:1.7b",
+      "strategy": "cot",
+      "prompt": "Task: Instruction Following\nDescription: Follow instructions accurately\nEvaluation criteria: Correctness, completeness, instruction adherence\nInput: Explain in two sentences how to write a clear function docstring.\n\nPlease provide a concise, direct answer.\nLet's think step by step before answering.",
+      "response": "A function docstring is a brief summary of the function's purpose and expected behavior that appears at the beginning of the function definition. It should be written in a clear and concise manner to help other developers understand the function's functionality.",
+      "elapsed": 0.5427062511444092,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:01:39.845498Z",
+      "model": "magistral:24b",
+      "strategy": "zero",
+      "prompt": "Task: Instruction Following\nDescription: Follow instructions accurately\nEvaluation criteria: Correctness, completeness, instruction adherence\nInput: Explain in two sentences how to write a clear function docstring.\n\nPlease provide a concise, direct answer.",
+      "response": "### Summary:\nA clear function docstring should explain what the function does and how to use it by documenting its parameters, return values, and any side effects. It should be concise, well-formatted, and written in plain language for clarity.\n\n\\boxed{A clear function docstring should explain what the function does and how to use it by documenting its parameters, return values, and any side effects. It should be concise, well-formatted, and written in plain language for clarity.}",
+      "elapsed": 69.74393510818481,
+      "success": true,
+      "error": null
+    },
+    {
+      "timestamp": "2026-01-11T11:02:52.464677Z",
+      "model": "magistral:24b",
+      "strategy": "few",
+      "prompt": "Task: Instruction Following\nDescription: Follow instructions accurately\nEvaluation criteria: Correctness, completeness, instruction adherence\n\nHere are a few examples:\nInput: Translate the following instruction into a short checklist: 'Prepare a 3-slide summary for tomorrow's meeting'\nOutput: 1. Open slides app\n2. Create 3 slides: Title, Summary, Next Steps\n3. Add brief bullet points\n4. Save and share\n---\nInput: Summarize: 'List 3 benefits of unit testing'\nOutput: 1. Finds bugs early\n2. Facilitates refactoring\n3. Documents expected behavior\n---\nNow, Input: Explain in two sentences how to write a clear function docstring.\nPlease write Output:",
+      "response": "**Summary:**\nA clear function docstring should begin with a brief summary of what the function does and then include details about its arguments, return values, and any side effects. This ensures users understand both the purpose and usage of the function without reading the code.\n\nOutput:\n1. A clear function docstring starts with a brief summary of what the function does.\n2. It then includes details about parameters, return values, and side effects to provide full context.\n\n\\boxed{1. \\text{A clear function docstring starts with a brief summary of what the function does.} \\\\\n2. \\text{It then includes details about parameters, return values, and side effects to provide full context.}}",
+      "elapsed": 72.61796975135803,
+      "success": true,
+      "error": null
+    }
   ]
 }
