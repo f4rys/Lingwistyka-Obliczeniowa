@@ -49,6 +49,7 @@ def should_skip_cot(model: dict, strategy: str) -> bool:
 
 def preview_experiments(tasks: list, models: list, strategies: list):
     """Return experiments runs count."""
+    runs = 0
     for _ in tasks:
         for m in models:
             for s in strategies:
