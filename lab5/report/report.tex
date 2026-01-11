@@ -121,6 +121,11 @@ Przyczyny obserwowanych różnic mogą obejmować:
   \item ograniczenia modelu małego w utrzymaniu kontekstu i wykonaniu dłuższych, precyzyjnych analiz.
 \end{itemize}
 
+\section{Obserwacje}
+W trakcie analizy zauważono, że dodanie przykładów (few-shot) często obniżało ocenę odpowiedzi w przypadku modelu o ograniczonej pojemności (\texttt{smollm:1.7b}). Taka degradacja jakości można przypisać przede wszystkim wewnętrznym ograniczeniom modelu: ograniczone okno kontekstowe sprawia, że przykłady zajmują istotną część dostępnej reprezentacji, utrudniając prawidłowe przetworzenie docelowego zapytania; model może mieć trudności z uogólnieniem wzorców z przykładów i zamiast tego naśladować styl lub nieistotne szczegóły (tzw. "style drift"); wreszcie, mniejsza pojemność często skutkuje generowaniem bardziej rozwlekłych lub mniej trafnych wypowiedzi, co obniża ocenę w rubryce preferującej zwięzłość i precyzję.
+
+W praktyce oznacza to, że dla modeli o ograniczonej pojemności preferencyjne będą krótkie, precyzyjne instrukcje (starannie sformułowany zero-shot) zamiast rozbudowanych few-shotów, które mogą obciążać model i pogorszyć końcowy rezultat.
+
 \section{Wnioski}
 \begin{itemize}
   \item Duże modele rozumujące oferują wyraźną przewagę w zadaniach wymagających wieloetapowego rozumowania lub rozumienia skomplikowanych kryteriów oceny.
