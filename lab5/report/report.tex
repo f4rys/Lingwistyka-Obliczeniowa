@@ -1,0 +1,131 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Ocena modeli językowych i wpływ strategii promptowania \\ Lingwistyka Obliczeniowa | Laboratorium 5}
+\author{Wojciech Bartoszek}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Wstęp}
+Celem eksperymentu było porównanie zachowania i jakości generowanych odpowiedzi pomiędzy modelem małym (ok. 1.7B parametrów) a modelem dużym i specjalizowanym w rozumowaniu (ok. 24B parametrów). Badanie obejmuje różne typy zadań (instrukcje, rozumowanie logiczne, twórcze pisanie, generowanie kodu, itp.) oraz trzy strategie promptowania: zero-shot, few-shot oraz CoT (dla standardowych modeli).
+
+\section{Modele i środowisko eksperymentalne}
+Eksperyment uruchomiono lokalnie przy użyciu Ollama i interfejsu Pythonowego. Wybrane modele do porównań to:
+\begin{itemize}
+  \item \textbf{smollm:1.7b} -- model mały (baseline), stosowany z zero-shot, few-shot oraz CoT,
+  \item \textbf{magistral:24b} -- model większy ze wzmocnionymi zdolnościami rozumowania; z powodu jego wewnętrznego mechanizmu rozumienia pominięto explicite CoT przy jego testowaniu.
+\end{itemize}
+
+\section{Metodologia}
+Przygotowanie eksperymentu składało się z dwóch faz: fazy inżynierii promptów (development set) oraz fazy oceny.
+
+\subsection{Zadania (10 typów)}
+Dla każdej z kategorii zdefiniowano opis zadania oraz kryteria oceny. Przykładowe kategorie:
+\begin{enumerate}
+  \item Instruction Following (Instrukcje),
+  \item Logical Reasoning (Rozumowanie logiczne),
+  \item Creative Writing (Twórcze pisanie),
+  \item Code Generation (Generowanie kodu),
+  \item Reading Comprehension (Rozumienie tekstu),
+  \item Common Sense Reasoning,
+  \item Language Understanding \& Ambiguity,
+  \item Factual Knowledge,
+  \item Mathematical Problem Solving,
+  \item Ethical Reasoning.
+\end{enumerate}
+
+Dla ilustracji przedstawiono przykładowe zadania użyte w ocenie (pojedynczy przykład z każdego rodzaju):
+\begin{description}
+  \item[Instruction Following:] \textit{"Explain in two sentences how to write a clear function docstring."}
+  \item[Ethical Reasoning:] \textit{"Is it ethical to use performance metrics alone for promotion decisions? Provide considerations."}
+  \item[Logical Reasoning:] \textit{"If all A are B and some B are C, can we conclude some A are C? Explain."}
+\end{description}
+
+Dla każdej kategorii przygotowano również 2--3 przykłady do fazy "few-shot" (development set), które nie pokrywały się bezpośrednio z przykładami ewaluacyjnymi.
+
+\subsection{Promptowanie}
+Dla każdej pary (model, zadanie) testowano:
+\begin{itemize}
+  \item \textbf{Zero-shot}: tylko opis zadania i wejście,
+  \item \textbf{Few-shot}: dodano 2--3 przykłady wzorcowe przed zadaniem,
+  \item \textbf{Chain-of-Thought (CoT)}: polecenie \textit{"Let's think step by step before answering"} dodane jedynie dla modelu małego i standardowych modeli (CoT pominięto dla modelu rozumującego).
+\end{itemize}
+
+\subsection{Ocena}
+Wszystkie odpowiedzi oceniono ręcznie w sposób anonimowy (maskowano nazwę modelu i strategii), przy użyciu skali 0--5, gdzie 5 oznacza odpowiedź spełniającą wszystkie kryteria.
+
+\section{Struktura projektu}
+Projekt składa się z trzech głównych notebooków:
+\begin{enumerate}
+  \item \texttt{lab5.ipynb} -- przygotowanie eksperymentu, ładowanie zadań i uruchamianie zapytań do wybranych modeli;
+  \item \texttt{lab5\_evaluation.ipynb} -- anonimowa, ręczna ocena odpowiedzi
+  \item \texttt{lab5\_results.ipynb} -- analiza wyników i wizualizacje (agregacja, wykresy, eksport obrazów).
+\end{enumerate}
+
+Ta trójpodziałowa struktura ułatwia reprodukowalność: oddziela generowanie danych od oceny i analizy.
+
+\section{Wyniki}
+Poniżej przedstawiono zestawienie zebranych wyników. Agregacje wykonano po ręcznej ocenie (skala 0--5). Tabela poniżej przedstawia średnie wartości ocen (mean) dla par (model, strategia):
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Model & Strategia & \textit{Średnia ocena} (0--5) \\
+\midrule
+smollm:1.7b & zero & 3.000 (n=10) \\
+smollm:1.7b & few  & 2.800 (n=10) \\
+smollm:1.7b & cot  & 2.300 (n=10) \\
+magistral:24b & zero & 4.700 (n=10) \\
+magistral:24b & few  & 4.200 (n=10) \\
+\midrule
+\multicolumn{2}{l}{\textbf{Średnia ogólna}} & smollm:1.7b = 2.700 (n=30); magistral:24b = 4.450 (n=20) \\
+\bottomrule
+\end{tabular}
+\caption{Średnie oceny ręczne według modelu i strategii.}
+\end{table}
+
+Wykresy wygenerowane w trakcie analizy (zapisywane do \texttt{lab5/outputs}) ilustrują:
+\begin{itemize}
+  \item \textbf{Impact of Prompting Strategy} (\texttt{strategy\_comparison\_manual.png}) -- porównanie wpływu strategii (zero/few/CoT) na średnią punktację dla poszczególnych modeli.
+  \item \textbf{Model Performance by Task Type} (\texttt{task\_performance\_manual.png}) -- średnia normalizowana (0--1) dla zadań, z rozbiciem na modele.
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../outputs/strategy_comparison_manual.png}
+  \caption{Wpływ strategii promptowania na średnią ocenę (ręczna ocena).}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../outputs/task_performance_manual.png}
+  \caption{Wydajność modeli wg typu zadania (średnia znormalizowana).}
+\end{figure}
+
+\section{Dyskusja}
+Z zebranych danych wynika, że model \texttt{magistral:24b} istotnie przewyższa model \texttt{smollm:1.7b} w większości testowanych kategorii i strategii. Różnica jest szczególnie wyraźna w zadaniach wymagających głębszego rozumowania i złożonej analizy (np. rozumowanie etyczne, logiczne). W przypadku modelu małego zauważalne są relatywnie niewielkie lub mieszane zyski z zastosowania few-shot i CoT - w niektórych zadaniach CoT nie poprawił wyników.
+
+Przyczyny obserwowanych różnic mogą obejmować:
+\begin{itemize}
+  \item większą pojemność modelu i bogatsze wewnętrzne reprezentacje u modelu dużego,
+  \item ograniczenia modelu małego w utrzymaniu kontekstu i wykonaniu dłuższych, precyzyjnych analiz.
+\end{itemize}
+
+\section{Wnioski}
+\begin{itemize}
+  \item Duże modele rozumujące oferują wyraźną przewagę w zadaniach wymagających wieloetapowego rozumowania lub rozumienia skomplikowanych kryteriów oceny.
+  \item Prompt engineering (few-shot, CoT) ma największy wpływ przy modelach, które nie posiadają wbudowanych mechanizmów rozumowania; efekty mogą być zmienne dla modeli mniejszych.
+  \item Ręczna, anonimowa ocena pozostaje skutecznym sposobem uchwycenia niuansów jakości odpowiedzi, ale wymaga znacznego nakładu pracy; dla pełniejszej oceny warto rozważyć standaryzowane rubryki i/lub wieloocenianie.
+\end{itemize}
+
+\end{document}
