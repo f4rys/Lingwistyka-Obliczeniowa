@@ -40,7 +40,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import time
 import pandas as pd
-
+from tqdm import tqdm
 
 def normalize_models(models):
     """Normalize a list of models where each model can be a string, dict, or an Ollama model object.
