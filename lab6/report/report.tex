@@ -1,0 +1,133 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Laboratorium 6 — TRM}
+\author{Wojciech Bartoszek}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Niniejszy raport dokumentuje projekt, trening oraz ocenę Tiny Recursive Model (TRM) zastosowanego do zadania Sudoku Extreme oraz porównuje jego zachowanie z pojedynczym modelem LLM ("ministral-3:3b") przy użyciu dwóch strategii promptowania: bezpośredniej ("zero") oraz łańcucha myślenia ("cot"). Przedstawiono krzywe trenowania, metryki ilościowe oraz jakościową analizę błędów obserwowanych w odpowiedziach LLM.
+\end{abstract}
+
+\section{Zadanie i cele eksperymentu}
+Celem zadania było sprawdzenie, czy niewielki model o indukcyjnych priorytetach wnioskowania może nauczyć się rozwiązywać strukturalne zadania rozumowania (tutaj: Sudoku 9x9). Waga została położona na jakość wnioskowania, ekonomię danych i analizę błędów, a nie na skalę modelu.
+
+\section{Dane i wstępne przetwarzanie}
+Użyto dostarczonego zbioru Sudoku Extreme (z próbkowaniem i augmentacją, aby zapewnić wykonalność treningu). Metadane: długość sekwencji $9\times9$ (seq\_len = 81), kodowanie słownika opiera się na liczbach całkowitych, gdzie 0 oznacza puste pole; tokeny wyjściowe modelu były przesunięte o +1 wewnętrznie. Dane zostały przygotowane i zapisane w \texttt{lab6/data/sudoku-extreme-enhanced}. Zbiór treningowy został próbkowany do 10k przykładów, by trening był wykonalny na dostępnych zasobach sprzętowych.
+
+\section{Architektura modelu i trening}
+\paragraph{Model.} TRM to mały model implementujący mechanizm zatrzymania w stylu ACT. W przeprowadzonym eksperymencie zastosowano następującą konfigurację:
+\begin{itemize}
+  \item Rozmiar warstwy ukrytej: \textbf{128}
+  \item Liczba głów (heads): \textbf{4}
+  \item Liczba warstw lokalnych (L-layers): \textbf{2}
+  \item Maksymalna liczba kroków zatrzymania: \textbf{4}
+  \item Rozmiar batcha: \textbf{32}
+  \item Optymalizator: AdamW (lr = \num{1e-3}, weight\_decay = 0.01)
+  \item Harmonogram: ReduceLROnPlateau (factor=0.5, patience=5)
+  \item Liczba epok treningu: \textbf{5}
+\end{itemize}
+
+\section{Wyniki trenowania}
+Tabela~\ref{tab:training} zawiera metryki rejestrowane w kolejnych epokach treningu.
+
+\begin{table}[h]
+\centering
+\caption{Metryki treningowe i walidacyjne na epokę}
+\label{tab:training}
+\begin{tabular}{r S[table-format=2.3] S[table-format=1.3] S[table-format=2.3] S[table-format=1.3]}
+\toprule
+Epoka & {train\_loss} & {train\_token\_acc} & {val\_loss} & {val\_token\_acc} \\
+\midrule
+1 & 33.702 & 0.556 & 27.769 & 0.613 \\
+2 & 26.617 & 0.633 & 26.051 & 0.646 \\
+3 & 25.207 & 0.651 & 24.540 & 0.655 \\
+4 & 24.200 & 0.659 & 24.071 & 0.660 \\
+5 & 23.664 & 0.666 & 23.863 & 0.662 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Rysunek~\ref{fig:training_history} przedstawia krzywe strat i dokładności tokenowej dla treningu i walidacji (plik: \texttt{lab6/checkpoints/training\_history.png}).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{../checkpoints/training_history.png}
+  \caption{Historia treningu: strata (po lewej) i dokładność tokenowa (po prawej).}
+  \label{fig:training_history}
+\end{figure}
+
+Końcowa dokładność tokenowa na zbiorze walidacyjnym dla TRM wynosi \textbf{0.6619} (patrz Tabela~\ref{tab:eval}), a strata walidacyjna to \textbf{23.8626}.
+
+\section{Ocena modelu LLM (ministral-3:3b)}
+Dla porównania z TRM oceniono pojedynczy, silny model LLM na niewielkim zbiorze przykładów (5 zadań testowych) używając dwóch strategii:
+\begin{itemize}
+  \item \textbf{zero}: bezpośredni prompt żądający jedynie finalnej, numerycznej reprezentacji siatki.
+  \item \textbf{cot}: prośba o krótkie rozumowanie krok-po-kroku (chain-of-thought), przy czym model ma zwrócić tylko finalną siatkę.
+\end{itemize}
+Interakcja odbyła się za pośrednictwem lokalnego klienta \texttt{ollama}, a odpowiedzi były parsowane heurystycznie (wyszukiwanie bloków kodu lub sekwencji cyfr).
+
+Tabela~\ref{tab:llm} przedstawia dokładności tokenowe dla pojedynczych przykładów oraz średnie dla każdej strategii.
+
+\begin{table}[h]
+\centering
+\caption{Tokenowa dokładność LLM dla poszczególnych przykładów (5 przykładów testowych)}
+\label{tab:llm}
+\begin{tabular}{r S[table-format=1.6] S[table-format=1.6]}
+\toprule
+Przykład & {zero (token\_acc)} & {cot (token\_acc)} \\
+\midrule
+0 & 0.567901 & 0.518519 \\
+1 & 0.407407 & 0.506173 \\
+2 & 0.370370 & 0.259259 \\
+3 & 0.283951 & 0.308642 \\
+4 & 0.246914 & 0.308642 \\
+\midrule
+\textbf{średnia} & \textbf{0.375309} & \textbf{0.380247} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Wykres porównujący TRM oraz dwie strategie promptowania LLM zapisano w \texttt{lab6/checkpoints/trm\_vs\_llm\_three.png} i pokazano na Rysunku~\ref{fig:trm_vs_llm}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\textwidth]{../checkpoints/trm_vs_llm_three.png}
+  \caption{Średnia dokładność tokenowa: TRM vs LLM (zero) vs LLM (cot).}
+  \label{fig:trm_vs_llm}
+\end{figure}
+
+\section{Analiza jakościowa}
+TRM nauczył się spójnego wzorca rozwiązywania na poziomie tokenów (końcowa dokładność ~0.662), natomiast LLM wykazał następujące zachowania:
+\begin{itemize}
+  \item Problemy z formatem wyjścia: wiele odpowiedzi LLM zawierało powtarzające się cyfry, zduplikowane wiersze oraz wartości łamiące reguły Sudoku (np. powtórzenia w wierszu), co czyniło rozwiązania niepoprawnymi.
+  \item Kruchość parsowania: mimo zastosowania heurystyk parsujących (wyodrębnianie sekwencji cyfr i sprawdzanie zakresu/kształtu), część odpowiedzi LLM wymagała czyszczenia lub była odrzucona (zarejestrowane jako błędy parsowania).
+  \item Wpływ promptowania: zastosowanie "chain-of-thought" ("cot") nie poprawiło jednoznacznie dokładności tokenowej względem prostego promptu ("zero") na tej małej próbce (średnie: 0.380 vs 0.375).
+\end{itemize}
+
+Obserwacje te zgadzają się z oczekiwaniem, że model ogólnego przeznaczenia bez jawnego wymuszania reguł Sudoku może generować odpowiedzi syntaktycznie prawdopodobne, ale niezgodne z ograniczeniami problemu.
+
+\section{Dyskusja i ograniczenia}
+\begin{itemize}
+  \item TRM wykazuje solidną jakość na poziomie tokenów w porównaniu z LLM w trybie few-shot, co podkreśla zalety modelu specjalizowanego do zachowań strukturalnych i spójności lokalnej.
+  \item Ocena oparta była na dokładności tokenowej (porównanie przewidzianych tokenów komórek z prawdziwymi). Bardziej rygorystyczna metryka — poprawne kompletne rozwiązanie Sudoku — byłaby bardziej informatywna dla zastosowań praktycznych.
+  \item Ocena LLM była ograniczona do niewielkiej próbki 5 przykładów i jednego modelu/ustawienia; wyniki nie są wystarczające do szerokich uogólnień.
+  \item Część odpowiedzi LLM była sformatowana niepoprawnie; lepszy pipeline ewaluacyjny mógłby zawierać solver weryfikujący spójność i mierzący poprawność całej siatki oraz spełnianie ograniczeń.
+\end{itemize}
+
+\section{Wnioski}
+Specjalizowany TRM trenowany end-to-end na zadaniu Sudoku osiąga istotnie wyższą dokładność tokenową niż pojedynczy duży LLM oceniany na małej próbce przy dwóch strategiach promptowania. Małe modele z odpowiednimi priorytetami inductywnymi są skuteczne w zadaniach strukturalnych, gdzie ich założenia i funkcja celu odpowiadają ograniczeniom domeny.
+
+\end{document}
