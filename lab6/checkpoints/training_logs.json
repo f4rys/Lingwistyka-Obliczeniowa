@@ -1,0 +1,47 @@
+[
+  {
+    "task": "sudoku9",
+    "epoch": 1,
+    "lr": 0.001,
+    "train_loss": 33.701581976306976,
+    "train_token_acc": 0.5557283950617284,
+    "val_loss": 27.768591141336252,
+    "val_token_acc": 0.6129446277961129
+  },
+  {
+    "task": "sudoku9",
+    "epoch": 2,
+    "lr": 0.001,
+    "train_loss": 26.616670664439578,
+    "train_token_acc": 0.6326897119341564,
+    "val_loss": 26.050698773844513,
+    "val_token_acc": 0.6462767288567259
+  },
+  {
+    "task": "sudoku9",
+    "epoch": 3,
+    "lr": 0.001,
+    "train_loss": 25.20658221173642,
+    "train_token_acc": 0.6506374485596708,
+    "val_loss": 24.54029674314581,
+    "val_token_acc": 0.654540343878843
+  },
+  {
+    "task": "sudoku9",
+    "epoch": 4,
+    "lr": 0.001,
+    "train_loss": 24.199583703266786,
+    "train_token_acc": 0.658637037037037,
+    "val_loss": 24.070613042533978,
+    "val_token_acc": 0.6595975969630726
+  },
+  {
+    "task": "sudoku9",
+    "epoch": 5,
+    "lr": 0.001,
+    "train_loss": 23.664140161420743,
+    "train_token_acc": 0.6655485596707819,
+    "val_loss": 23.862580005599124,
+    "val_token_acc": 0.6619205770446982
+  }
+]

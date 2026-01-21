@@ -1,0 +1,2 @@
+task,model,loss,token_acc
+sudoku9,trm,23.862578376222054,0.6619206646470243
